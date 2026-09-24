@@ -176,8 +176,6 @@ t2.value5 = {
 	caverngun = "Stable",
 }
 
--- ============ ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ============
-
 function t2.value6(p1)
     if not p1 then return "" end
     local v32 = tostring(p1):gsub("%c", ""):gsub("&", "and")
@@ -197,92 +195,77 @@ function t2.value7(p3)
     if not p3:IsA("GuiObject") then return false end
     if not p3.Visible then return false end
     if p3.AbsoluteSize.X <= 0 or p3.AbsoluteSize.Y <= 0 then return false end
-    local p3Parent = p3.Parent
-    while p3Parent do
-        if p3Parent:IsA("GuiObject") and not p3Parent.Visible then return false end
-        p3Parent = p3Parent.Parent
-    end
     return true
 end
 
--- УНИВЕРСАЛЬНАЯ ФУНКЦИЯ: пытается вытащить название валюты из объекта
-function t2.extractItemName(obj)
+-- === ПОИСК ИМЕНИ ВАЛЮТЫ (только внутри одного слота, без глубокого сканирования) ===
+-- depth ограничивает: 0 = сам объект, 1 = прямые дети, 2 = внуки
+function t2.extractItemName(obj, maxDepth)
     if not obj then return nil, false end
+    maxDepth = maxDepth or 2
 
-    -- 1. Имя объекта
-    local nm = t2.value6(obj.Name)
-    if nm ~= "" then
-        if string.sub(nm, 1, 6) == "chroma" then
-            local k = string.sub(nm, 7)
+    local function tryName(str)
+        if not str then return nil, false end
+        local n = t2.value6(str)
+        if n == "" then return nil, false end
+        if string.sub(n, 1, 6) == "chroma" then
+            local k = string.sub(n, 7)
             if t2.value4[k] then return k, true end
         end
-        if t2.value3[nm] then return nm, false end
+        if t2.value3[n] then return n, false end
+        return nil, false
     end
+
+    -- 1. Имя самого объекта
+    local n, c = tryName(obj.Name)
+    if n then return n, c end
 
     -- 2. Атрибуты
     local ok, attrs = pcall(function() return obj:GetAttributes() end)
     if ok and attrs then
         for k, v in pairs(attrs) do
             if type(v) == "string" then
-                local av = t2.value6(v)
-                if av ~= "" then
-                    if string.sub(av, 1, 6) == "chroma" then
-                        local k2 = string.sub(av, 7)
-                        if t2.value4[k2] then return k2, true end
-                    end
-                    if t2.value3[av] then return av, false end
-                end
+                n, c = tryName(v)
+                if n then return n, c end
             end
-            local kn = t2.value6(k)
-            if t2.value3[kn] then return kn, false end
+            n, c = tryName(k)
+            if n then return n, c end
         end
     end
 
-    -- 3. Текст
+    -- 3. Свой текст
     if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
-        local tx = t2.value6(obj.Text)
-        if tx ~= "" then
-            if string.sub(tx, 1, 6) == "chroma" then
-                local k = string.sub(tx, 7)
-                if t2.value4[k] then return k, true end
-            end
-            if t2.value3[tx] then return tx, false end
-        end
+        n, c = tryName(obj.Text)
+        if n then return n, c end
     end
 
-    -- 4. Потомки
-    for _, c in ipairs(obj:GetDescendants()) do
-        if c:IsA("StringValue") then
-            local sv = t2.value6(c.Value)
-            if sv ~= "" then
-                if string.sub(sv, 1, 6) == "chroma" then
-                    local k = string.sub(sv, 7)
-                    if t2.value4[k] then return k, true end
-                end
-                if t2.value3[sv] then return sv, false end
+    -- 4. Дети (не глубоко!)
+    if maxDepth > 0 then
+        for _, child in ipairs(obj:GetChildren()) do
+            -- StringValue
+            if child:IsA("StringValue") then
+                n, c = tryName(child.Value)
+                if n then return n, c end
             end
-        end
-        if c:IsA("TextLabel") then
-            if c.Name ~= "TradeCheckerValue" and c.Name ~= "TradeCheckerStability" then
-                local tx = t2.value6(c.Text)
-                if tx ~= "" then
-                    if string.sub(tx, 1, 6) == "chroma" then
-                        local k = string.sub(tx, 7)
-                        if t2.value4[k] then return k, true end
-                    end
-                    if t2.value3[tx] then return tx, false end
-                end
+            -- TextLabel (кроме наших)
+            if child:IsA("TextLabel") and child.Name ~= "TradeCheckerValue" and child.Name ~= "TradeCheckerStability" then
+                n, c = tryName(child.Text)
+                if n then return n, c end
             end
-        end
-        -- Имя картинки тоже часто содержит валюту
-        if c:IsA("ImageLabel") or c:IsA("ImageButton") then
-            local cn = t2.value6(c.Name)
-            if cn ~= "" then
-                if string.sub(cn, 1, 6) == "chroma" then
-                    local k = string.sub(cn, 7)
-                    if t2.value4[k] then return k, true end
-                end
-                if t2.value3[cn] then return cn, false end
+            -- Имя картинки/фрейма
+            if child:IsA("ImageLabel") or child:IsA("ImageButton") or child:IsA("Frame") then
+                n, c = tryName(child.Name)
+                if n then return n, c end
+            end
+            -- Имя текстового лейбла
+            if child:IsA("TextLabel") or child:IsA("TextButton") then
+                n, c = tryName(child.Name)
+                if n then return n, c end
+            end
+            -- Глубже
+            if maxDepth > 1 then
+                n, c = t2.extractItemName(child, maxDepth - 1)
+                if n then return n, c end
             end
         end
     end
@@ -301,20 +284,13 @@ function t1.value1(p4)
             end
         end
     end
-    for _, d in ipairs(p4:GetDescendants()) do
-        if (d:IsA("TextLabel") or d:IsA("TextButton") or d:IsA("TextBox")) and t2.value7(d) then
-            if d.Name ~= "TradeCheckerValue" and d.Name ~= "TradeCheckerStability" then
-                if t2.value6(d.Text) == "chroma" then return true end
-            end
-        end
-    end
     if string.find(t2.value6(p4.Name), "chroma", 1, true) then return true end
     return false
 end
 
 function t1.value2(p5)
     if not p5 then return "" end
-    local name = t2.extractItemName(p5)
+    local name = t2.extractItemName(p5, 2)
     if name then return name end
     return ""
 end
@@ -322,8 +298,7 @@ end
 function t2.value8(p7)
     if not p7 then return 1 end
     for _, v in ipairs(p7:GetDescendants()) do
-        local isText = v:IsA("TextLabel")
-        if isText and t2.value7(v) and v.Name ~= "TradeCheckerValue" and v.Name ~= "TradeCheckerStability" then
+        if v:IsA("TextLabel") and t2.value7(v) and v.Name ~= "TradeCheckerValue" and v.Name ~= "TradeCheckerStability" then
             local v40 = v.Text:gsub("%s+", ""):lower()
             local match = string.match(v40, "^x(%d+)$") or string.match(v40, "^(%d+)x$")
             if not match then
@@ -609,13 +584,18 @@ end
 function t2.value27(p19)
     for _, d in ipairs(p19:GetDescendants()) do
         local isOurs = d.Name == "TradeCheckerValue" or d.Name == "TradeCheckerStability"
-        if isOurs and not d:FindFirstAncestor("YourOffer") and not d:FindFirstAncestor("TheirOffer") then
-            d:Destroy()
+        if isOurs then
+            local inYour = d:FindFirstAncestor("YourOffer") ~= nil
+            local inTheir = d:FindFirstAncestor("TheirOffer") ~= nil
+            -- Если метка не в правильном слоте - удаляем (защита от "утечек")
+            if not inYour and not inTheir then
+                d:Destroy()
+            end
         end
     end
 end
 
--- УЛУЧШЕННЫЙ ПОИСК ПРЕДМЕТОВ
+-- ==== ГЛАВНАЯ ФУНКЦИЯ ПОИСКА ПРЕДМЕТОВ (без дубликатов) ====
 function t2.value28(offer, sideName)
     if not offer then return 0 end
     local side = offer:FindFirstChild(sideName)
@@ -623,56 +603,70 @@ function t2.value28(offer, sideName)
 
     local total = 0
     local processed = {}
-    local candidates = {}
 
-    -- Все GuiObject в контейнере
-    for _, c in ipairs(side:GetChildren()) do table.insert(candidates, c) end
-    for _, d in ipairs(side:GetDescendants()) do table.insert(candidates, d) end
+    -- Собираем список слотов: только ПРЯМЫЕ дети, которые похожи на слоты
+    -- Слот определяется по:
+    --   1) имени NewItem1/Item1/Slot1/NewSlot1...
+    --   2) наличию ItemIcon/Icon внутри
+    --   3) наличию ViewportFrame
+    --   4) наличию TextLabel с именем "ItemName"/"Name"
+    local function isSlot(obj)
+        if not obj or not obj:IsA("GuiObject") then return false end
+        local nm = obj.Name
+        if string.match(nm, "^NewItem%d+$") or string.match(nm, "^Item%d+$")
+           or string.match(nm, "^Slot%d+$") or string.match(nm, "^NewSlot%d+$") then
+            return true
+        end
+        if obj:FindFirstChild("ItemIcon", true) then return true end
+        if obj:FindFirstChild("Icon", true) then return true end
+        if obj:FindFirstChild("ViewportFrame", true) then return true end
+        return false
+    end
 
-    for _, v in ipairs(candidates) do
-        if not processed[v] and v:IsA("GuiObject") and t2.value7(v) then
-            processed[v] = true
+    -- Собираем слоты — сначала прямые дети
+    local slots = {}
+    for _, child in ipairs(side:GetChildren()) do
+        if isSlot(child) then
+            table.insert(slots, child)
+            processed[child] = true
+        end
+    end
 
-            -- Ищем название валюты в самом объекте
-            local name, isChroma = t2.extractItemName(v)
-
-            -- Если не нашли — пробуем родителя (слот часто = родитель иконки)
-            if not name and v.Parent and v.Parent ~= side then
-                name, isChroma = t2.extractItemName(v.Parent)
-            end
-
-            -- Если всё ещё нет — попробуем поискать в детях родителя
-            if not name and v.Parent then
-                for _, sib in ipairs(v.Parent:GetChildren()) do
-                    if sib ~= v and sib:IsA("GuiObject") then
-                        local n2, c2 = t2.extractItemName(sib)
-                        if n2 then name, isChroma = n2, c2; break end
-                    end
+    -- Если прямых слотов не нашли — ищем среди потомков, но берём только те,
+    -- у кого НЕТ родителя-слота (иначе будет дубликат)
+    if #slots == 0 then
+        for _, d in ipairs(side:GetDescendants()) do
+            if isSlot(d) and not processed[d] then
+                -- Проверяем, нет ли выше такого же слота
+                local hasSlotParent = false
+                local p = d.Parent
+                while p and p ~= side do
+                    if isSlot(p) then hasSlotParent = true; break end
+                    p = p.Parent
                 end
-            end
-
-            if name then
-                local price = isChroma and t2.value4[name] or t2.value3[name]
-                if price then
-                    -- Куда крепим метку: используем родителя, если сам объект маленький
-                    local slot = v
-                    if v.Parent and v.Parent ~= side and v.Parent:IsA("GuiObject") then
-                        slot = v.Parent
-                    end
-                    local stability = t2.value11(name)
-                    total = total + price
-                    t2.value26(slot, price, stability)
-                    for _, ch in ipairs(slot:GetDescendants()) do processed[ch] = true end
+                if not hasSlotParent then
+                    table.insert(slots, d)
+                    processed[d] = true
                 end
             end
         end
     end
 
-    return total
-end
+    -- Обрабатываем каждый слот ОДИН РАЗ
+    for _, slot in ipairs(slots) do
+        -- Ищем имя внутри слота (глубина 2)
+        local name, isChroma = t2.extractItemName(slot, 2)
+        if name then
+            local price = isChroma and t2.value4[name] or t2.value3[name]
+            if price then
+                local stability = t2.value11(name)
+                total = total + price
+                t2.value26(slot, price, stability)
+            end
+        end
+    end
 
-function t2.value29(p22, p23, p24, p25)
-    p24.Text = t2.value12(p23)
+    return total
 end
 
 function t2.value30(p26, p27)
