@@ -2,7 +2,6 @@
 -- База цен обновлена: 24 сентября 2026 г. с supremevalues.com
 
 local t3 = {
-	-- Godly (Tier 4)
 	travelersgun = 5200,
 	evergun = 3450,
 	constellation = 2700,
@@ -27,7 +26,6 @@ local t3 = {
 	xenoknife = 405,
 	xenoshot = 405,
 	bloom = 400,
-	-- Godly (Tier 3)
 	heartwand = 340,
 	blizzard = 305,
 	snowstorm = 305,
@@ -50,7 +48,6 @@ local t3 = {
 	candy = 80,
 	pearl = 75,
 	heartblade = 65,
-	-- Godly (Tier 2)
 	phantom = 35,
 	redluger = 35,
 	spectre = 35,
@@ -68,7 +65,6 @@ local t3 = {
 	hallowgun = 20,
 	nightblade = 20,
 	shark = 20,
-	-- Godly (Tier 1)
 	icebeam = 18,
 	luger = 18,
 	plasmabeam = 18,
@@ -102,7 +98,6 @@ local t3 = {
 	heat = 10,
 	spider = 10,
 	tides = 10,
-	-- Godly (Tier 0)
 	bioblade = 8,
 	eternaliii = 8,
 	eternaliv = 8,
@@ -132,7 +127,6 @@ local t3 = {
 	seer = 3,
 	orangeseer = 2,
 	yellowseer = 2,
-	-- Vintage
 	blood = 8,
 	ghost = 8,
 	laservintage = 8,
@@ -143,18 +137,14 @@ local t3 = {
 	cowboy = 4,
 	golden = 4,
 	splitter = 3,
-	-- Unique
 	corrupt = 350,
-	-- Ancient (Special Tier)
 	niksscythe = 1500000,
-	-- Ancient (Tier 2)
 	gingerscope = 16250,
 	travelersaxe = 8100,
 	celestial = 2300,
 	vampiresaxe = 1600,
 	harvester = 250,
 	icepiercer = 160,
-	-- Ancient (Tier 1)
 	icebreaker = 65,
 	batwing = 42,
 	elderwoodscythe = 38,
@@ -162,7 +152,6 @@ local t3 = {
 	hallowscythe = 30,
 	logchopper = 18,
 	icewing = 13,
-	-- Chroma (Tier 3)
 	chromatravelersgun = 150000,
 	chromaevergun = 57000,
 	chromaevergreen = 41000,
@@ -170,7 +159,6 @@ local t3 = {
 	chromaconstellation = 31000,
 	chromavampiresgun = 29000,
 	chromaalienbeam = 24000,
-	-- Chroma (Tier 2)
 	chromaraygun = 14000,
 	chromasunrise = 10750,
 	chromasnowcannon = 7750,
@@ -186,7 +174,6 @@ local t3 = {
 	chromasweet = 1725,
 	chromasands = 1625,
 	chromabeachy = 1575,
-	-- Chroma (Tier 1)
 	chromadarkbringer = 65,
 	chromalightbringer = 60,
 	chromaluger = 50,
@@ -206,7 +193,6 @@ local t3 = {
 	chromatides = 27,
 	chromasaw = 23,
 	chromaboneblade = 22,
-	-- Chroma (Pets)
 	chromafirebat = 3,
 	chromafirebear = 3,
 	chromafirebunny = 3,
@@ -214,7 +200,6 @@ local t3 = {
 	chromafiredog = 3,
 	chromafirefox = 3,
 	chromafirepig = 3,
-	-- Legendary (Tier 3)
 	lattegun = 140,
 	latteknife = 140,
 	spectralknife = 50,
@@ -515,7 +500,185 @@ t2.value5 = {
 	caverngun = "Stable",
 }
 
--- Все функции и GUI остаются без изменений (они универсальны).
+function t2.value6(p1)
+    if not p1 then return "" end
+    local v32 = tostring(p1):gsub("%c", ""):gsub("&", "and")
+    return string.lower(v32):gsub("[^a-z0-9]", "")
+end
+
+function t1.value3(p2)
+    local v34 = t2.value6(p2)
+    if v34 == "" then return nil end
+    if t2.value5[v34] ~= nil then return t2.value5[v34] end
+    return nil
+end
+
+t2.value7 = nil
+function t2.value7(p3)
+    if not p3 then return false end
+    if not p3:IsA("GuiObject") then return false end
+    if not p3.Visible then return false end
+    if p3.AbsoluteSize.X <= 0 or p3.AbsoluteSize.Y <= 0 then return false end
+    local p3Parent = p3.Parent
+    while p3Parent do
+        if p3Parent:IsA("GuiObject") then
+            if not p3Parent.Visible or p3Parent.AbsoluteSize.X <= 0 or p3Parent.AbsoluteSize.Y <= 0 then
+                return false
+            end
+        end
+        p3Parent = p3Parent.Parent
+    end
+    return true
+end
+
+function t1.value1(p4)
+    if not p4 then return false end
+    local ok, attrs = pcall(function() return p4:GetAttributes() end)
+    if ok and attrs then
+        for k, v in pairs(attrs) do
+            local v53 = t2.value6(k)
+            if v53 == "chroma" or v53 == "ischroma" or v53 == "ischromatic" then
+                if v == true or string.lower(tostring(v)) == "true" then
+                    return true
+                end
+            end
+        end
+    end
+    for _, descendant in ipairs(p4:GetDescendants()) do
+        local isText = descendant:IsA("TextLabel") or descendant:IsA("TextButton") or descendant:IsA("TextBox")
+        if isText and t2.value7(descendant) then
+            if descendant.Name ~= "TradeCheckerValue" and descendant.Name ~= "TradeCheckerStability" then
+                if t2.value6(descendant.Text) == "chroma" then
+                    return true
+                end
+            end
+        end
+    end
+    if string.find(t2.value6(p4.Name), "chroma", 1, true) then
+        return true
+    end
+    return false
+end
+
+function t1.value2(p5)
+    if not p5 then return "" end
+    local t4 = {}
+
+    local function v62(p6)
+        if not p6 then return end
+        local v151 = t2.value6(p6)
+        if v151 == "" then return end
+        if string.match(v151, "^%d+$") then return end
+        if v151 == "chroma" or v151 == "godly" or v151 == "ancient" or v151 == "legendary" then return end
+        if v151 == "tradecheckervalue" or v151 == "tradecheckerstability" then return end
+        if v151 == "unique" or v151 == "vintage" or v151 == "rare" or v151 == "uncommon" or v151 == "common" then return end
+        table.insert(t4, { original = p6, normalized = v151 })
+    end
+
+    -- Сначала тултип из ItemIcon
+    local ItemIcon = p5:FindFirstChild("ItemIcon", true)
+    if ItemIcon then
+        local ToolTip = ItemIcon:FindFirstChild("ToolTip", true)
+        if ToolTip and ToolTip:IsA("TextLabel") and t2.value7(ToolTip) then
+            v62(ToolTip.Text)
+        end
+    end
+
+    -- Дочерние TextLabel с именами
+    for _, v in ipairs({"ItemName","Name","Label","DisplayName","WeaponName","Title"}) do
+        local v2 = p5:FindFirstChild(v, true)
+        if v2 and v2:IsA("TextLabel") and t2.value7(v2) then
+            v62(v2.Text)
+        end
+    end
+
+    -- Все потомки
+    for _, v73 in ipairs(p5:GetDescendants()) do
+        if v73:IsA("StringValue") then
+            v62(v73.Value)
+        end
+        if v73:IsA("TextLabel") and t2.value7(v73) then
+            if v73.Name ~= "TradeCheckerValue" and v73.Name ~= "TradeCheckerStability" then
+                v62(v73.Text)
+            end
+        end
+    end
+
+    -- Возврат первого совпадения
+    for _, v in ipairs(t4) do
+        if t2.value3[v.normalized] ~= nil or t2.value4[v.normalized] ~= nil then
+            return v.normalized
+        end
+    end
+
+    return ""
+end
+
+function t2.value8(p7)
+    if not p7 then return 1 end
+    for _, v in ipairs(p7:GetDescendants()) do
+        local v39 = v:IsA("TextLabel")
+        if v39 then
+            v39 = t2.value7(v)
+            if v39 then
+                v39 = v.Name ~= "TradeCheckerValue" and v.Name ~= "TradeCheckerStability"
+            end
+        end
+        if v39 then
+            local v40 = v.Text:gsub("%s+", ""):lower()
+            local match = string.match(v40, "^x(%d+)$") or string.match(v40, "^(%d+)x$")
+            if not match then
+                local nm = v.Name:lower()
+                if string.find(nm, "amount") or string.find(nm, "count") then
+                    match = string.match(v40, "^(%d+)$")
+                end
+            end
+            if match then
+                local num = tonumber(match)
+                if num and num > 0 then return num end
+            end
+        end
+    end
+    return 1
+end
+
+t2.value9 = t1.value1
+t2.value10 = t1.value2
+t2.value11 = t1.value3
+
+local function v9(p8)
+    if not p8 then return 0, false, "" end
+    local v80 = t2.value9(p8)
+    local v81 = t2.value10(p8)
+    local v82 = t2.value6(v81)
+    local v83 = t2.value8(p8)
+    if v82 == "" then return 0, v80, "" end
+    local n1 = 0
+    if v80 then
+        if string.sub(v82, 1, 6) == "chroma" then v82 = string.sub(v82, 7) end
+        local v85 = t2.value4[v82]
+        if v85 ~= nil then n1 = v85 end
+    else
+        if string.sub(v82, 1, 6) == "chroma" then v82 = string.sub(v82, 7) end
+        local v86 = t2.value3[v82]
+        if v86 ~= nil then n1 = v86 end
+    end
+    return n1 * v83, v80, v82
+end
+
+function t2.value12(p9)
+    local v78 = tonumber(p9) or 0
+    return string.format("%.2f", v78)
+end
+
+function t2.value13(p10)
+    if not p10 or p10 == "" then return Color3.fromRGB(255, 255, 255) end
+    local v56 = p10:gsub("#", "")
+    local v57 = tonumber("0x" .. v56:sub(1, 2)) or 255
+    local v58 = tonumber("0x" .. v56:sub(3, 4)) or 255
+    local v59 = tonumber("0x" .. v56:sub(5, 6)) or 255
+    return Color3.fromRGB(v57, v58, v59)
+end
 
 local MM2TradeChecker = t2.value2:FindFirstChild("MM2TradeChecker")
 if MM2TradeChecker then MM2TradeChecker:Destroy() end
@@ -733,29 +896,21 @@ function t2.value26(p16, p17, p18)
         TextLabel3.TextXAlignment = Enum.TextXAlignment.Right
         local v104, color3
         if p18 == "Doing Well" then
-            v104 = t2.value13("7E5DE9")
-            color3 = Color3.fromRGB(255, 255, 255)
+            v104 = t2.value13("7E5DE9"); color3 = Color3.fromRGB(255, 255, 255)
         elseif p18 == "Stable" then
-            v104 = Color3.fromRGB(255, 255, 255)
-            color3 = Color3.fromRGB(0, 0, 0)
+            v104 = Color3.fromRGB(255, 255, 255); color3 = Color3.fromRGB(0, 0, 0)
         elseif p18 == "Underpaid For" then
-            v104 = t2.value13("FFA775")
-            color3 = Color3.fromRGB(255, 255, 255)
+            v104 = t2.value13("FFA775"); color3 = Color3.fromRGB(255, 255, 255)
         elseif p18 == "Overpaid For" then
-            v104 = t2.value13("90DEED")
-            color3 = Color3.fromRGB(255, 255, 255)
+            v104 = t2.value13("90DEED"); color3 = Color3.fromRGB(255, 255, 255)
         elseif p18 == "Receding" then
-            v104 = t2.value13("FFE83A")
-            color3 = Color3.fromRGB(255, 255, 255)
+            v104 = t2.value13("FFE83A"); color3 = Color3.fromRGB(255, 255, 255)
         elseif p18 == "Fluctuating" then
-            v104 = t2.value13("F06FFF")
-            color3 = Color3.fromRGB(255, 255, 255)
+            v104 = t2.value13("F06FFF"); color3 = Color3.fromRGB(255, 255, 255)
         elseif p18 == "Improving" then
-            v104 = t2.value13("00FF88")
-            color3 = Color3.fromRGB(255, 255, 255)
+            v104 = t2.value13("00FF88"); color3 = Color3.fromRGB(255, 255, 255)
         else
-            v104 = Color3.fromRGB(255, 255, 255)
-            color3 = Color3.fromRGB(0, 0, 0)
+            v104 = Color3.fromRGB(255, 255, 255); color3 = Color3.fromRGB(0, 0, 0)
         end
         TextLabel3.TextColor3 = v104
         local UIStroke6 = Instance.new("UIStroke")
@@ -768,30 +923,50 @@ end
 
 function t2.value27(p19)
     for _, descendant in ipairs(p19:GetDescendants()) do
-        local v90 = descendant.Name == "TradeCheckerValue"
-        if not v90 then v90 = descendant.Name == "TradeCheckerStability" end
+        local v90 = descendant.Name == "TradeCheckerValue" or descendant.Name == "TradeCheckerStability"
         if v90 and (not descendant:FindFirstAncestor("YourOffer") and not descendant:FindFirstAncestor("TheirOffer")) then
             descendant:Destroy()
         end
     end
 end
 
+-- УЛУЧШЕНО: более гибкий поиск слотов
 function t2.value28(p20, p21)
     local p21_2 = p20:FindFirstChild(p21)
+    if not p21_2 then
+        p21_2 = p20:FindFirstChild(p21, true)
+    end
     if not p21_2 then return 0 end
+
     local n2 = 0
-    local GetDescendants = p21_2.GetDescendants
-    for _, v in ipairs(GetDescendants(p21_2)) do
-        if v:IsA("GuiObject") and t2.value7(v) then
-            local match = string.match(v.Name, "^NewItem%d+$")
-            if not match then
-                match = string.match(v.Name, "^Item%d+$")
-                if not match then
-                    match = string.match(v.Name, "^Slot%d+$")
-                    if not match then match = v:FindFirstChild("ItemIcon", true) ~= nil end
-                end
+    local seen = {}
+
+    -- Собираем ВСЕ элементы (дети + потомки)
+    local elements = {}
+    for _, c in ipairs(p21_2:GetChildren()) do
+        table.insert(elements, c)
+    end
+    for _, d in ipairs(p21_2:GetDescendants()) do
+        table.insert(elements, d)
+    end
+
+    for _, v in ipairs(elements) do
+        if not seen[v] and v:IsA("GuiObject") and t2.value7(v) then
+            seen[v] = true
+
+            -- Определяем, является ли элемент слотом предмета
+            local isSlot = false
+            local nm = v.Name
+
+            if string.match(nm, "^NewItem%d+$") or string.match(nm, "^Item%d+$") or string.match(nm, "^Slot%d+$") then
+                isSlot = true
+            elseif v:FindFirstChild("ItemIcon", true) or v:FindFirstChild("Icon", true) or v:FindFirstChild("ViewportFrame", true) then
+                isSlot = true
+            elseif v:FindFirstChild("ItemName", true) or v:FindFirstChild("WeaponName", true) then
+                isSlot = true
             end
-            if match then
+
+            if isSlot then
                 local v115, _, v117 = v9(v)
                 local v118 = t2.value11(v117)
                 if v115 > 0 then
@@ -832,12 +1007,8 @@ function t2.value30(p26, p27)
     end
     if v128 > 0 then
         if v128 >= 300 then
-            local value15 = t2.value15
-            local v131 = v128 >= 10000 and "💥CRAZY WIIIN🌋"
-            if not v131 then
-                v131 = not (v128 >= 3000) and "MEGA WIN🎉" or "ULTRA WIN💞"
-            end
-            value15.Text = v131
+            local v131 = v128 >= 10000 and "💥CRAZY WIIIN🌋" or (v128 >= 3000 and "ULTRA WIN💞" or "MEGA WIN🎉")
+            t2.value15.Text = v131
             t2.value15.TextColor3 = Color3.fromRGB(210, 120, 255)
             t2.value25(Color3.fromRGB(150, 60, 200), 0, Color3.fromRGB(120, 40, 160), Color3.fromRGB(130, 50, 170), 0)
             return
@@ -863,8 +1034,7 @@ function t2.value31()
 end
 
 function t2.value32()
-    local TradeGUI = t2.value2:FindFirstChild("TradeGUI")
-    if not TradeGUI then TradeGUI = t2.value2:FindFirstChild("TradeGui") end
+    local TradeGUI = t2.value2:FindFirstChild("TradeGUI") or t2.value2:FindFirstChild("TradeGui")
     if not TradeGUI or not TradeGUI.Enabled then
         t2.value31()
         return
@@ -880,13 +1050,8 @@ function t2.value32()
         return
     end
     local YourOffer = Trade:FindFirstChild("YourOffer")
-    local v136 = not YourOffer
     local TheirOffer = Trade:FindFirstChild("TheirOffer")
-    if not v136 then
-        v136 = not TheirOffer
-        if not v136 then v136 = not YourOffer.Visible or not TheirOffer.Visible end
-    end
-    if v136 then
+    if not YourOffer or not TheirOffer or not YourOffer.Visible or not TheirOffer.Visible then
         t2.value31()
         return
     end
@@ -899,7 +1064,9 @@ end
 
 t2.value33 = 0
 RunService.RenderStepped:Connect(function()
-    if tick() - t2.value33 >= 0.25 then
+    local now = tick()
+    if now - t2.value33 >= 0.1 then
+        t2.value33 = now
         t2.value32()
     end
 end)
@@ -907,7 +1074,6 @@ end)
 print("🌸 MM2 Trade Checker успешно загружен!")
 print("🌸 База цен обновлена (24.09.2026)!")
 
--- ПЛАВАЮЩАЯ НАДПИСЬ С ТГК (СТАТИЧНАЯ, НЕ ДВИГАЕТСЯ)
 local ScreenGui2 = Instance.new("ScreenGui")
 ScreenGui2.Name = "FloatingTGK"
 ScreenGui2.ResetOnSpawn = false
@@ -941,4 +1107,4 @@ UIStroke8.Thickness = 2
 UIStroke8.Transparency = 0.5
 UIStroke8.Parent = TextLabel4
 
-print("💬 Плавающая надпись с TGK закреплена (не двигается)!")
+print("💬 Плавающая надпись с TGK закреплена!")
